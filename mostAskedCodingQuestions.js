@@ -205,3 +205,73 @@ const flatten = arr => arr.reduce((acc, val) =>
   Array.isArray(val) ? acc.concat(flatten(val)) : acc.concat(val), []);
 
 console.log(flatten(arr)); // [1, 2, 3]
+
+
+
+
+// Online Javascript Editor for free // Write, Edit and Run your Javascript code using JS Online Compiler 
+// You are to implement a function scheduler with a delay and a maximum number of concurrent executions. 
+// example
+/*
+scheduler([
+  () => task(1000, 'A'),
+  () => task(500, 'B'),
+  () => task(300, 'C'),
+  () => task(400, 'D')
+], 2);
+
+*/
+
+// Output order based on time and concurrency: // After 0ms: A, B start // After 500ms: B completes, C starts // After 1000ms: A completes, D starts
+
+function task(delay, name) {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      console.log(`${name} completed after ${delay}ms`);
+      resolve();
+    }, delay);
+  });
+}
+
+async function scheduler(tasks, maxConcurrent) {
+  let running = 0;
+  let index = 0;
+
+  return new Promise((resolve) => {
+    const results = [];
+
+    function runNext() {
+      // Finished all tasks and none running
+      if (index === tasks.length && running === 0) {
+        resolve(results);
+        return;
+      }
+
+      // While we have capacity to run new tasks
+      while (running < maxConcurrent && index < tasks.length) {
+        const currentTaskIndex = index;
+        const taskFn = tasks[currentTaskIndex];
+        index++;
+        running++;
+        console.log(`Starting: ${taskFn.name}`);
+
+        taskFn().then((res) => {
+          running--;
+          results.push(res);
+          runNext(); // trigger next task when one completes
+        });
+      }
+    }
+
+    runNext();
+  });
+}
+
+
+// Testing the scheduler
+scheduler([
+  () => task(1000, 'A'),
+  () => task(500, 'B'),
+  () => task(300, 'C'),
+  () => task(400, 'D')
+], 2);
