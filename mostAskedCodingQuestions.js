@@ -275,3 +275,139 @@ scheduler([
   () => task(300, 'C'),
   () => task(400, 'D')
 ], 2);
+
+
+
+//Shallow copy and deep copy
+
+//✅ 1) Using = (NOT a copy – just reference)
+const original = { name: "Sam", skills: ["JS", "React"] };
+
+const copy = original; // same reference
+
+copy.name = "John";
+copy.skills.push("Node");
+
+console.log(original);
+// Output: { name: "John", skills: ["JS", "React", "Node"] }
+
+//✅ 2) Shallow Copy
+//Shallow copy copies only 1 level. Nested objects/arrays still share reference.
+
+const original = { name: "Sam", skills: ["JS", "React"] };
+
+const shallowCopy = { ...original };
+
+shallowCopy.name = "John";          // safe
+shallowCopy.skills.push("Node");    // affects original
+
+console.log(original.skills);
+// Output: ["JS", "React", "Node"]
+
+
+//✅ 3) Deep Copy using JSON.stringify + JSON.parse
+// Copies nested objects too ✅
+
+const original = { name: "Sam", skills: ["JS", "React"] };
+
+const deepCopy = JSON.parse(JSON.stringify(original));
+
+deepCopy.skills.push("Node");
+
+console.log(original.skills);
+// Output: ["JS", "React"]  ✅ not changed
+console.log(deepCopy.skills);
+// Output: ["JS", "React", "Node"]
+
+/*
+✅ Completely separate
+⚠️ Won’t work for:
+functions
+dates
+undefined
+circular references
+*/
+
+
+// ✅ 4) Deep Copy using Lodash _.cloneDeep()
+//Works with everything (best method)
+
+import _ from "lodash";
+
+const original = { 
+  name: "Sam", 
+  skills: ["JS", "React"],
+  address: { city: "Delhi" },
+  joinDate: new Date()
+};
+
+const deepCopy = _.cloneDeep(original);
+
+deepCopy.skills.push("Node");
+deepCopy.address.city = "Mumbai";
+
+console.log(original.address.city); // "Delhi" ✅ safe
+console.log(deepCopy.address.city); // "Mumbai"
+
+/*
+Here are simple, clear examples showing how JSON.stringify → JSON.parse fails for:
+✅ functions
+✅ dates
+✅ undefined
+✅ circular references
+
+*/
+//✅ 1) Functions are removed
+const original = {
+  name: "Sam",
+  sayHello: function () { console.log("Hello"); }
+};
+
+const copy = JSON.parse(JSON.stringify(original));
+
+console.log(copy);
+// Output: { name: "Sam" }   ✅ function is gone!
+
+
+//❌ Functions are not valid JSON → they disappear.
+
+//✅ 2) Dates turn into strings
+const original = {
+  name: "Sam",
+  joinDate: new Date("2023-01-01")
+};
+
+const copy = JSON.parse(JSON.stringify(original));
+
+console.log(typeof original.joinDate); // object (Date)
+console.log(typeof copy.joinDate);     // string  ❌ lost the Date object
+
+console.log(copy);
+// Output: { name: "Sam", joinDate: "2023-01-01T00:00:00.000Z" }
+
+
+//❌ Date becomes just a plain string, not a Date object anymore.
+
+//✅ 3) Undefined values are removed
+const original = {
+  name: "Sam",
+  age: undefined
+};
+
+const copy = JSON.parse(JSON.stringify(original));
+
+console.log(copy);
+// Output: { name: "Sam" }   ✅ "age" removed completely
+
+
+//❌ JSON has no undefined, so the key disappears.
+
+//✅ 4) Circular reference causes error
+const original = { name: "Sam" };
+original.self = original; // circular reference
+
+JSON.stringify(original);
+// ❌ TypeError: Converting circular structure to JSON
+
+
+//Because original.self points back to original, JSON cannot convert it.
