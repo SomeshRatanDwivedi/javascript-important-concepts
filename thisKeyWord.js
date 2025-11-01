@@ -89,6 +89,19 @@ function Person(name) {
 let newUser = new Person("Charlie");
 console.log(newUser.name); // "Charlie"
 
+
+//Ex of call apply bind with parameters
+
+function greet(a, b) {
+  return `${this.name} is cooking ${a} and ${b}`;
+}
+
+let user = { name: "Bob" };
+ console.log(greet.call(user,"rice", "dal")); // Bob is cooking rice and dal
+ console.log(greet.apply(user,["rice", "dal"])); // Bob is cooking rice and dal
+let boundGreet = greet.bind(user,"rice", "dal");
+ console.log(boundGreet()); // Bob is cooking rice and dal
+
 // Summary:
 // - "this" refers to the object it belongs to.
 // - Its value depends on the context in which it is used (method, function, event, arrow function).
