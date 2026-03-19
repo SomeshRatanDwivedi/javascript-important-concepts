@@ -57,6 +57,40 @@ function removeSpace(obj) {
   }, {});
 }
 
+const nestedObject = {
+  a: 'jack',
+  b: {
+    c: 'sparrow',
+    d: {
+      e: 'hahaha'    
+    }
+  },
+  f: 123
+};
+
+/*{
+  'a': 'jack',
+  'b.c': 'sparrow',
+  'b.d.e': 'hahaha',
+  'f': 123
+}*/
+
+function removeNestrObj(obj){
+    let newObj={}
+    for(let key in obj){
+        if(typeof obj[key]!="object"){
+           newObj={...newObj, [key]:obj[key]}
+        }else{
+            const restObj=removeNestrObj(obj[key]);
+            for(let restKey in restObj){
+                const newKey=`${key}.${restKey}`;
+                newObj={...newObj, [newKey]:restObj[restKey]}
+            }
+        }
+    }
+    return newObj;
+}
+
 //What is the output of this code 
 console.log(1);
 const promise = new Promise((resolve, reject) => {
