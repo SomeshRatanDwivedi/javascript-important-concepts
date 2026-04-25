@@ -90,6 +90,24 @@ function removeNestrObj(obj){
     }
     return newObj;
 }
+// good version
+function removeDepth(obj){
+    return Object.entries(obj).reduce((acc, [key, value])=>{
+        if(typeof value==="object" && value!==null){
+            const remainObj=removeDepth(value);
+            for(let objKey in remainObj){
+                const newKey=`${key}.${objKey}`;
+                acc[newKey]=remainObj[objKey];
+            }
+        }else if(typeof value=== "string"){
+            acc[key]=value;
+        }else{
+            acc[key]=value;
+        }
+        return acc;
+        
+    }, {})
+}
 
 //What is the output of this code 
 console.log(1);
