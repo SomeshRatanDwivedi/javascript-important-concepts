@@ -1,5 +1,14 @@
 //This file contain the frequently asked coding questions in javascript
 
+//Find kth smallest element in matrix
+function findKthSmallest(matrix, k) {
+    // 1. Flatten the 2D array into 1D
+    // 2. Sort numerically (JS sorts lexicographically by default!)
+    const flatArray = matrix.flat().sort((a, b) => a - b);
+    
+    // k is usually 1-indexed in these problems
+    return flatArray[k - 1];
+}
 //1. Remove all trailing space from the value in object
 
 const nestedObj = {
