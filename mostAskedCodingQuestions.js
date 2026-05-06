@@ -9,6 +9,30 @@ function findKthSmallest(matrix, k) {
     // k is usually 1-indexed in these problems
     return flatArray[k - 1];
 }
+
+     const input = [ 
+          {"class": 'A', "color": "red"},
+          {"class": 'B', "color": "Greed"},
+          {"class": 'B', "color": "Blue"},
+          {"class": 'A', "color": "Yellow"},
+        ]
+ 
+        // output = [ 
+        //   {"class": "A", "color": ["red", "Yellow"]},
+        //   {"class": "B", "color": ["Green", "Blue"]},
+        // ]
+        
+        const data=input.reduce((acc, item)=>{
+            const className=acc.find(ele=>ele.class==item.class);
+            if(className){
+                className.color.push(item.color);
+            }else{
+                acc.push({"class":item.class, color:[item.color]});
+            }
+            return acc;
+            
+        }, [])
+        console.log(data, "data");
 //1. Remove all trailing space from the value in object
 
 const nestedObj = {
