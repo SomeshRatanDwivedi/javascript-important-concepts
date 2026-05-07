@@ -149,3 +149,55 @@ console.log(user.fullName); // "Jane Doe"
 user.fullName = "Alice Smith";
 console.log(user.firstName); // "Alice"
 console.log(user.lastName); // "Smith"
+
+/*In JavaScript, every object has a built-in property called its Prototype.
+
+Think of a prototype as a "Parent" or a "Blueprint" that an object can fall back on. If you try to access a property or a method that doesn't exist on the object itself, JavaScript will look for it in the prototype.
+
+1. The Prototype Chain
+This is the mechanism for Inheritance in JavaScript. When you look for a property:
+
+JS looks at the Object itself.
+
+If not found, it looks at the Object's Prototype.
+
+If not found there, it looks at the Prototype's Prototype.
+
+This continues until it reaches null (the end of the chain).
+
+2. Why do we need it? (Memory Efficiency)
+Imagine you have 1,000 Vehicle objects. If each object has its own startEngine function, you are creating 1,000 copies of that function in memory.
+
+By using the Prototype, you create the function once, and all 1,000 objects share it.
+
+JavaScript
+function Vehicle(name) {
+  this.name = name;
+}
+
+// Adding a method to the prototype
+Vehicle.prototype.startEngine = function() {
+  console.log(`${this.name} is roaring!`);
+};
+
+const tractor = new Vehicle("John Deere 8R");
+const harvester = new Vehicle("X9 Combine");
+
+tractor.startEngine();   // Found in prototype
+harvester.startEngine(); // Shares the SAME function in memory
+3. __proto__ vs prototype
+This is a very common interview question.
+
+prototype: This is a property on Constructor Functions. It is the blueprint used to build the objects.
+
+__proto__: This is a property on Instances (the objects created). it points to the prototype of the function that created it.
+
+John Deere Tip: If you use ES6 Classes (which they likely do), the class syntax is just "syntactic sugar" over this prototype system. When you define a method inside a class, JavaScript is actually attaching it to the prototype behind the scenes.
+
+4. Prototypal Inheritance vs. Classical Inheritance
+Classical (Java/C++): Classes are blueprints, and objects are copies. You can't change the blueprint at runtime.
+
+Prototypal (JavaScript): Objects are linked to other objects. You can add a method to Vehicle.prototype at any time, and every vehicle in your app—even the ones already created—will instantly have access to it.
+
+Summary Answer for your Interview:
+"A prototype is a mechanism by which JavaScript objects inherit features from one another. Every object has a private property which holds a link to another object called its prototype. This creates a Prototype Chain. It is essential for performance because it allows multiple objects to share the same methods and properties without duplicating them in memory."*/
