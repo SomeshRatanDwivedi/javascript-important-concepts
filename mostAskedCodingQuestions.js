@@ -1,4 +1,39 @@
 //This file contain the frequently asked coding questions in javascript
+//Create a function that take msg and ms as arguement and console the message after ms seconds
+const delay=(msg, ms)=>{
+    return new Promise(res=>{
+        setTimeout(()=>{
+            console.log(msg);
+            res();
+        },ms)
+    })
+}
+delay("msg1", 2000);
+delay("msg2", 500);
+delay("msg3", 3000);
+/*
+This will print
+msg2
+msg1
+msg3
+
+Reason-: Because we are calling the funtion without await so js execute all 3 funtion line by line it will not wait. So after all the line execution call stack will be free.
+Because setTimeout is a Web API provided by the browser, JavaScript hands the timing job off to the browser's background threads. The browser spins up three independent, concurrent timers in memory.
+after 500ms the 2nd callback will be pushed into task queue, event loop get the callback and check the call stack its empty so it will push this call back to call stack. Like this only 1st then 3rd.
+*/
+
+await delay("msg1", 2000);
+await delay("msg2", 500);
+await delay("msg3", 3000);
+/*
+This will print
+msg1
+msg2
+msg3
+
+Reason: Because here used await so js will wait for 1 line to fullfiled then only it will go to second line.
+
+*/
 
 //Find kth smallest element in matrix
 function findKthSmallest(matrix, k) {
