@@ -1,4 +1,20 @@
 //This file contain the frequently asked coding questions in javascript
+//Remove the duplicate elements from array without using set
+const arr=[1, 2, 3, 1, 2, 4, 5, 5]
+const mpp=new Map();
+const res=[];
+arr.forEach(ele=>{
+    if(!mpp.has(ele)){
+        res.push(ele);
+    }
+    mpp.set(ele, true);
+})
+console.log(res, "res");
+
+/*
+output-:[ 1, 2, 3, 4, 5 ] res
+Note we can use objects also instead of map.
+*/
 //Create a function that take msg and ms as arguement and console the message after ms seconds
 const delay=(msg, ms)=>{
     return new Promise(res=>{
