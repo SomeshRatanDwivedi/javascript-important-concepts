@@ -50,6 +50,18 @@ msg3
 Reason: Because here used await so js will wait for 1 line to fullfiled then only it will go to second line.
 
 */
+//Note- This will also work
+const delay=(msg, ms)=>{
+    return new Promise(res=>{
+        setTimeout(()=>{
+            console.log(msg);
+            res();
+        },ms)
+    })
+}
+delay("msg1", 2000);
+delay("msg2", 500);
+delay("msg3", 3000);
 
 //Find kth smallest element in matrix
 function findKthSmallest(matrix, k) {
