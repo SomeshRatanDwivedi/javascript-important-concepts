@@ -1,0 +1,90 @@
+console.log("A"); // 1. Synchronous
+
+setTimeout(() => {
+    console.log("B"); // 5. Macrotask (Timer phase)
+}, 0);
+
+new Promise((resolve, reject) => {
+    console.log("C"); // 2. Synchronous (Runs IMMEDIATELY inside the constructor)
+    resolve();
+});
+
+setImmediate(() => {
+    console.log("D"); // 6. Macrotask (Check phase)
+});
+
+process.nextTick(() => {
+    console.log("E"); // 3. Microtask (High-priority nextTick queue)
+});
+
+console.log("F"); // 4. Synchronous
+
+
+// A,C, F E, B,D  
+
+Promise.resolve().then(() => console.log('Promise 1'));
+process.nextTick(() => {
+  console.log('NextTick 1');
+  process.nextTick(() => console.log('NextTick 2'));
+});
+Promise.resolve().then(() => console.log('Promise 2'));
+
+//Promise 1, Promise 2, NextTick 1, NextTick 2
+
+
+console.log('1. Synchronous');
+
+setImmediate(() => {
+  console.log('4. setImmediate (Macrotask)');
+});
+
+process.nextTick(() => {
+  console.log('2. process.nextTick (Microtask)');
+});
+
+Promise.resolve().then(() => {
+  console.log('3. Promise (Microtask)');
+});
+
+/*
+1. Synchronous
+2. process.nextTick (Microtask)
+3. Promise (Microtask)
+4. setImmediate (Macrotask)
+*/
+
+setImmediate(() => {
+  console.log('Immediate 1');
+  process.nextTick(() => console.log('Tick inside Immediate'));
+});
+
+setImmediate(() => {
+  console.log('Immediate 2');
+});
+
+
+// 'Immediate 1', 'Tick inside Immediate', 'Immediate 2' 
+
+
+
+
+/*
+To understand how the Event Loop handles a large file with 200 lines of code, synchronous functions, 3 to 4 API network calls, and 3 to 4 file reads, you have to look at it in two distinct stages: Initialization and Asynchronous Execution.Phase 1: The Initialization Stage (The Call Stack)When you run node app.js, Node.js does not start the Event Loop immediately. It first processes the entire file from line 1 to 200 on the Call Stack (Synchronous Thread).Synchronous Functions: Any standard functions, loops, or math calculations run immediately. They block the thread until they are completely finished.3–4 File Reads (fs.readFile): Node.js passes these tasks to the libuv Thread Pool (background threads). The Main Thread does not wait; it instantly moves to the next line.3–4 API Calls (fetch / axios): Node.js passes these to the Operating System network stack in the background. Again, the Main Thread moves on instantly.At line 200, the Call Stack is empty. Only now does the Event Loop spin up and take control.Phase 2: The Event Loop Stage (The Race)The Event Loop now enters a continuous cycle, rotating through its standard phases to check if any background operations have finished.Because file reads and network calls take different amounts of time, their callbacks enter the Event Loop in a race condition based on speed.Here is how the Event Loop processes them as they finish:text ┌────────────────────────────────────────────────────────┐
+ │ 1. TIMERS PHASE                                        │
+ │    - Checks for expired setTimeout/setInterval         │
+ └───────────────────────────┬────────────────────────────┘
+                             │
+                             ▼
+ ┌────────────────────────────────────────────────────────┐
+ │ 2. POLL PHASE (I/O & Network)                          │
+ │    - Hey Operating System, are the API calls done?      │ ──► Runs API callbacks
+ │    - Hey Thread Pool, are the file reads done?          │ ──► Runs File callbacks
+ └───────────────────────────┬────────────────────────────┘
+                             │
+                             ▼
+ ┌────────────────────────────────────────────────────────┐
+ │ 3. CHECK PHASE                                         │
+ │    - Checks for any registered setImmediate()          │
+ └────────────────────────────────────────────────────────┘
+Use code with caution.1. Handling the API Calls (Network I/O)What happens: Your operating system handles the HTTP requests.Event Loop Phase: When a website responds, the OS flags it. The Event Loop picks up the callback during the Poll Phase and executes the code inside your .then() or async/await block.2. Handling the File Reads (Disk I/O)What happens: Node's background thread pool reads the files from your hard drive.Event Loop Phase: As soon as a file is read into memory, its callback is placed into the I/O queue. The Event Loop processes it during the Poll Phase.Crucial Rule: The Order is "First Come, First Served"If File Read #2 is a tiny 1KB file, and File Read #1 is a massive 500MB file, File Read #2 will execute its callback first.The Event Loop does not care about the order you wrote them in your 200 lines of code. It only cares about which background task finishes first.What happens if multiple tasks finish at the exact same millisecond?If an API call and a File Read finish at the exact same time, they both land in the Poll Phase queue. The Event Loop will simply process them one after the other in the order they arrived in that queue, without blocking the application.Would you like to see how a process.nextTick or a Promise microtask behaves if you insert it inside one of these API call callbacks?
+*/
