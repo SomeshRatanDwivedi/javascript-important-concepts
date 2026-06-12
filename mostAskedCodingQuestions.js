@@ -1,4 +1,44 @@
 //This file contain the frequently asked coding questions in javascript
+function groupBy(arr, key) {
+    // Your implementation
+    const mpp=new Map();
+    arr.forEach((ele)=>{
+        if(mpp.has(ele[key])){
+             mpp.get(ele[key]).push(ele);
+        }else{
+            mpp.set(ele[key], [ele]);
+        }
+    })
+    const ans={}
+    for(let [key, value] of mpp){
+        ans[key]=value;
+    }
+    return ans;
+}
+const groupData=groupBy([
+    { name: 'Alice', age: 25, id:1 },
+    { name: 'Bob', age: 30, id:2 },
+    { name: 'Charlie', age: 25, id:3 }
+],'age');
+console.log(groupData, "data");
+function uniqueBy(arr, key) {
+    // Your implementation
+    const mpp=new Map()
+    return arr.reduce((acc, item) => {
+        if (!mpp.has(item[key])) {
+            acc.push(item);
+            mpp.set(item[key], true);
+        }
+        return acc;
+    }, [])
+}
+const uniqueData=uniqueBy([
+    { name: 'Alice', age: 25, id:1 },
+    { name: 'Bob', age: 30, id:2 },
+    { name: 'Charlie', age: 25, id:3 }
+],'age');
+console.log(uniqueData, "data")
+
 //Remove the duplicate elements from array without using set
 const arr=[1, 2, 3, 1, 2, 4, 5, 5]
 const mpp=new Map();
