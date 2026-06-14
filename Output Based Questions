@@ -30,7 +30,91 @@ process.nextTick(() => {
 Promise.resolve().then(() => console.log('Promise 2'));
 
 //Promise 1, Promise 2, NextTick 1, NextTick 2
+/*
+Very important reason of this quetions
 
+You have hit the absolute core design principle of Node.js microtask management.
+
+Your output order is 100% correct:
+
+1. `NextTick 1`
+2. `NextTick 2`
+3. `Promise 1`
+4. `Promise 2`
+
+To understand *why* this happens and why `process.nextTick` cuts in line ahead of standard native Promises, we have to look at how the Node.js engine layers its internal queues.
+
+---
+
+### The Reality: They Are Both Microtasks, But with Separate Queues
+
+A common misconception is that all microtasks go into a single bucket. In Node.js, they don't. The engine maintains **two distinct microtask queues** right next to the Event Loop:
+
+1. **The `nextTick` Queue:** Stores callbacks scheduled by `process.nextTick()`.
+2. **The Promise Microtask Queue:** Stores callbacks scheduled by native Promises (`.then`, `catch`, `await`).
+
+---
+
+### Why `nextTick` is "More Important" (The Priority Rule)
+
+The Node.js engine has a hardcoded rule built into its execution phase: **The `nextTick` queue is completely cleared before the engine even looks at the Promise microtask queue.**
+
+Here is the exact timeline of how your code executes:
+
+#### Phase 1: The Synchronous Setup
+
+Node runs the file from top to bottom. It doesn't print anything yet; it just populates the queues:
+
+* It sees `Promise 1` $\rightarrow$ pushes it to the **Promise Queue**.
+* It sees `NextTick 1` $\rightarrow$ pushes it to the **nextTick Queue**.
+* It sees `Promise 2` $\rightarrow$ pushes it to the **Promise Queue**.
+
+The synchronous code ends. The call stack is now empty.
+
+#### Phase 2: Draining the `nextTick` Queue
+
+Node prepares to enter the Event Loop, but first, it checks its microtasks. It **must** clear the `nextTick` queue first.
+
+* It grabs `NextTick 1` $\rightarrow$ **Prints "NextTick 1"**.
+* While executing, `NextTick 1` schedules *another* tick: `NextTick 2`. Node pushes this directly to the back of the current `nextTick` queue.
+* Because Node promises to *completely drain* the `nextTick` queue before moving on, it doesn't switch to Promises yet. It grabs the newly added `NextTick 2` $\rightarrow$ **Prints "NextTick 2"**.
+
+#### Phase 3: Draining the Promise Queue
+
+Now that the `nextTick` queue is at absolute zero, Node finally shifts its attention to the Promise Microtask queue.
+
+* It grabs `Promise 1` $\rightarrow$ **Prints "Promise 1"**.
+* It grabs `Promise 2` $\rightarrow$ **Prints "Promise 2"**.
+
+---
+
+### Architectural Reason: Why did Node design it this way?
+
+Why give `process.nextTick` this insane power to cut the line?
+
+`process.nextTick` is not a standard JavaScript feature (browsers do not have it). Node.js engineers created it as an **architectural escape hatch**. It allows developers to execute a callback **immediately after the current synchronous script block finishes, but before the Event Loop is allowed to take another step or handle any I/O.**
+
+This is crucial for cleanup tasks, error handling, or completing event emitter bindings before any outside events can interfere.
+
+### 🚨 The Hidden Interview Warning: Starving the Event Loop
+
+Because of this exact architecture, you can easily crash a Node.js server with a recursive `nextTick` loop:
+
+```javascript
+function starve() {
+  process.nextTick(starve); // Infinitely adds itself to the nextTick queue
+}
+starve();
+
+```
+
+If you run this, **the Promise queue will never run, and the Event Loop will freeze completely.** The thread will stay trapped in Phase 2 forever, unable to process network requests or file reads, because the `nextTick` queue is never fully emptied.
+
+This is the ultimate proof that `process.nextTick` executes with absolute high-priority dominance over the rest of the asynchronous engine.
+
+
+
+*/
 
 console.log('1. Synchronous');
 
