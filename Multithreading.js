@@ -1,4 +1,4 @@
-//Multi threading in js
+//Multi threading in js and libuv
 
 In reality, Node.js splits asynchronous operations into two completely different underlying systems:
 
