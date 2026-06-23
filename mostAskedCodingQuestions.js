@@ -92,12 +92,10 @@ Reason: Because here used await so js will wait for 1 line to fullfiled then onl
 */
 //Note- This will also work
 const delay=(msg, ms)=>{
-    return new Promise(res=>{
         setTimeout(()=>{
             console.log(msg);
             res();
         },ms)
-    })
 }
 delay("msg1", 2000);
 delay("msg2", 500);
