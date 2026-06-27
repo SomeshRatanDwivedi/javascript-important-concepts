@@ -1,3 +1,90 @@
+async function fetchData() {
+  console.log('A');
+  const result = await Promise.resolve('data');
+  console.log('B');
+  return result;
+}
+console.log('C');
+fetchData().then(r => console.log('D', r));
+console.log('E'); output //C, A, E, B, D,
+
+/*
+# Async/Await Execution Flow Explained
+
+Let me walk through **exactly** what happens, line by line:Here's a detailed breakdown of each step:
+
+**Step 1 — `console.log('C')` prints immediately.** This is plain synchronous code at the top level, so it runs first, before anything else.
+
+**Step 2 — `fetchData()` is called.** Calling an `async` function doesn't make it asynchronous right away. Its body starts running synchronously, just like a normal function — until it hits an `await`.
+
+**Step 3 — `console.log('A')` prints.** This line is inside `fetchData()` but *before* the `await`, so it still runs synchronously, right now.
+
+**Step 4 — `await Promise.resolve('data')` — the pause point.** This is the key moment. `await` tells JavaScript: *"pause this function, schedule the rest of it as a microtask, and hand control back to the caller."* Even though `Promise.resolve()` resolves instantly, `await` always yields at least once.
+
+**Step 5 — `console.log('E')` prints.** Control returned to the main thread after `fetchData` paused. The `.then(...)` call is registered, but the callback hasn't fired yet. So `'E'` runs now.
+
+**Step 6 — `'B'` then `'D data'` print.** Once all synchronous code is done, the JavaScript engine processes the microtask queue. `fetchData` resumes from after the `await`, prints `'B'`, then returns `'data'`. That triggers the `.then(r => console.log('D', r))` callback, which prints `'D data'`.
+
+---
+
+The core rule to remember: **`await` pauses only the async function it's inside — not the rest of your program.** The main thread keeps running until it's idle, then microtasks (like resumed async functions) run next.
+
+-----------------------------------------Important Note---------------------------------
+Great question! Let me clear this up.
+
+You're right that `fetchData` doesn't use `new Promise((res, rej) => ...)`. But here's the key:
+
+## `async` functions **automatically** return a Promise
+
+When you write:
+
+```js
+async function fetchData() {
+  const result = await Promise.resolve('data');
+  return result; // you return 'data'
+}
+```
+
+JavaScript silently wraps that return value for you. It's exactly as if you wrote:
+
+```js
+function fetchData() {
+  return new Promise((resolve) => {
+    // ... does its thing ...
+    resolve('data'); // your return value gets passed here automatically
+  });
+}
+```
+
+So **`async` = automatic Promise wrapper**. Whatever you `return` from an async function becomes the **resolved value** of the Promise it returns.
+
+---
+
+## That's why `.then()` works
+
+```js
+fetchData().then(r => console.log('D', r));
+//         ^^^^
+//         fetchData() returns a Promise (automatically)
+//         so .then() is valid — just like any other Promise
+```
+
+`r` receives `'data'` because that's what `fetchData` returned.
+
+---
+
+## Quick mental model
+
+| You write | JS sees it as |
+|---|---|
+| `async function f() { return 42; }` | `f()` returns `Promise.resolve(42)` |
+| `async function f() { throw err; }` | `f()` returns `Promise.reject(err)` |
+| `await somePromise` inside async fn | pauses, waits for resolution, unwraps the value |
+
+So `async/await` is really just **syntactic sugar over Promises** — under the hood, it's all the same Promise machinery. `async` wraps the return value, and `await` unwraps a Promise's value. They're two sides of the same coin.
+*/
+
+
 console.log("A"); // 1. Synchronous
 
 setTimeout(() => {
