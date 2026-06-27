@@ -15,19 +15,25 @@ Let me walk through **exactly** what happens, line by line:Here's a detailed bre
 
 **Step 1 — `console.log('C')` prints immediately.** This is plain synchronous code at the top level, so it runs first, before anything else.
 
-**Step 2 — `fetchData()` is called.** Calling an `async` function doesn't make it asynchronous right away. Its body starts running synchronously, just like a normal function — until it hits an `await`.
+**Step 2 — `fetchData()` is called.** Calling an `async` function doesn't make it asynchronous right away. Its body starts running synchronously, 
+just like a normal function — until it hits an `await`.
 
 **Step 3 — `console.log('A')` prints.** This line is inside `fetchData()` but *before* the `await`, so it still runs synchronously, right now.
 
-**Step 4 — `await Promise.resolve('data')` — the pause point.** This is the key moment. `await` tells JavaScript: *"pause this function, schedule the rest of it as a microtask, and hand control back to the caller."* Even though `Promise.resolve()` resolves instantly, `await` always yields at least once.
+**Step 4 — `await Promise.resolve('data')` — the pause point.** This is the key moment. `await` tells JavaScript: *"pause this function, 
+schedule the rest of it as a microtask, and hand control back to the caller."* Even though `Promise.resolve()` resolves instantly, `await` always yields 
+at least once.
 
-**Step 5 — `console.log('E')` prints.** Control returned to the main thread after `fetchData` paused. The `.then(...)` call is registered, but the callback hasn't fired yet. So `'E'` runs now.
+**Step 5 — `console.log('E')` prints.** Control returned to the main thread after `fetchData` paused. The `.then(...)` call is registered, 
+but the callback hasn't fired yet. So `'E'` runs now.
 
-**Step 6 — `'B'` then `'D data'` print.** Once all synchronous code is done, the JavaScript engine processes the microtask queue. `fetchData` resumes from after the `await`, prints `'B'`, then returns `'data'`. That triggers the `.then(r => console.log('D', r))` callback, which prints `'D data'`.
+**Step 6 — `'B'` then `'D data'` print.** Once all synchronous code is done, the JavaScript engine processes the microtask queue. `fetchData` 
+resumes from after the `await`, prints `'B'`, then returns `'data'`. That triggers the `.then(r => console.log('D', r))` callback, which prints `'D data'`.
 
 ---
 
-The core rule to remember: **`await` pauses only the async function it's inside — not the rest of your program.** The main thread keeps running until it's idle, then microtasks (like resumed async functions) run next.
+The core rule to remember: **`await` pauses only the async function it's inside — not the rest of your program.** The main thread keeps running 
+until it's idle, then microtasks (like resumed async functions) run next.
 
 -----------------------------------------Important Note---------------------------------
 Great question! Let me clear this up.
@@ -81,7 +87,8 @@ fetchData().then(r => console.log('D', r));
 | `async function f() { throw err; }` | `f()` returns `Promise.reject(err)` |
 | `await somePromise` inside async fn | pauses, waits for resolution, unwraps the value |
 
-So `async/await` is really just **syntactic sugar over Promises** — under the hood, it's all the same Promise machinery. `async` wraps the return value, and `await` unwraps a Promise's value. They're two sides of the same coin.
+So `async/await` is really just **syntactic sugar over Promises** — under the hood, it's all the same Promise machinery. `async` wraps the return value, and 
+`await` unwraps a Promise's value. They're two sides of the same coin.
 */
 
 
@@ -129,13 +136,15 @@ Your output order is 100% correct:
 3. `Promise 1`
 4. `Promise 2`
 
-To understand *why* this happens and why `process.nextTick` cuts in line ahead of standard native Promises, we have to look at how the Node.js engine layers its internal queues.
+To understand *why* this happens and why `process.nextTick` cuts in line ahead of standard native Promises, we have to look at how the Node.js engine layers 
+its internal queues.
 
 ---
 
 ### The Reality: They Are Both Microtasks, But with Separate Queues
 
-A common misconception is that all microtasks go into a single bucket. In Node.js, they don't. The engine maintains **two distinct microtask queues** right next to the Event Loop:
+A common misconception is that all microtasks go into a single bucket. In Node.js, they don't. The engine maintains **two distinct microtask queues** right next 
+to the Event Loop:
 
 1. **The `nextTick` Queue:** Stores callbacks scheduled by `process.nextTick()`.
 2. **The Promise Microtask Queue:** Stores callbacks scheduled by native Promises (`.then`, `catch`, `await`).
@@ -144,7 +153,8 @@ A common misconception is that all microtasks go into a single bucket. In Node.j
 
 ### Why `nextTick` is "More Important" (The Priority Rule)
 
-The Node.js engine has a hardcoded rule built into its execution phase: **The `nextTick` queue is completely cleared before the engine even looks at the Promise microtask queue.**
+The Node.js engine has a hardcoded rule built into its execution phase: **The `nextTick` queue is completely cleared before the engine even looks at 
+the Promise microtask queue.**
 
 Here is the exact timeline of how your code executes:
 
@@ -179,7 +189,9 @@ Now that the `nextTick` queue is at absolute zero, Node finally shifts its atten
 
 Why give `process.nextTick` this insane power to cut the line?
 
-`process.nextTick` is not a standard JavaScript feature (browsers do not have it). Node.js engineers created it as an **architectural escape hatch**. It allows developers to execute a callback **immediately after the current synchronous script block finishes, but before the Event Loop is allowed to take another step or handle any I/O.**
+`process.nextTick` is not a standard JavaScript feature (browsers do not have it). Node.js engineers created it as an **architectural escape hatch**. 
+It allows developers to execute a callback **immediately after the current synchronous script block finishes, 
+but before the Event Loop is allowed to take another step or handle any I/O.**
 
 This is crucial for cleanup tasks, error handling, or completing event emitter bindings before any outside events can interfere.
 
@@ -195,7 +207,8 @@ starve();
 
 ```
 
-If you run this, **the Promise queue will never run, and the Event Loop will freeze completely.** The thread will stay trapped in Phase 2 forever, unable to process network requests or file reads, because the `nextTick` queue is never fully emptied.
+If you run this, **the Promise queue will never run, and the Event Loop will freeze completely.** The thread will stay trapped in Phase 2 forever, 
+unable to process network requests or file reads, because the `nextTick` queue is never fully emptied.
 
 This is the ultimate proof that `process.nextTick` executes with absolute high-priority dominance over the rest of the asynchronous engine.
 
@@ -240,7 +253,19 @@ setImmediate(() => {
 
 
 /*
-To understand how the Event Loop handles a large file with 200 lines of code, synchronous functions, 3 to 4 API network calls, and 3 to 4 file reads, you have to look at it in two distinct stages: Initialization and Asynchronous Execution.Phase 1: The Initialization Stage (The Call Stack)When you run node app.js, Node.js does not start the Event Loop immediately. It first processes the entire file from line 1 to 200 on the Call Stack (Synchronous Thread).Synchronous Functions: Any standard functions, loops, or math calculations run immediately. They block the thread until they are completely finished.3–4 File Reads (fs.readFile): Node.js passes these tasks to the libuv Thread Pool (background threads). The Main Thread does not wait; it instantly moves to the next line.3–4 API Calls (fetch / axios): Node.js passes these to the Operating System network stack in the background. Again, the Main Thread moves on instantly.At line 200, the Call Stack is empty. Only now does the Event Loop spin up and take control.Phase 2: The Event Loop Stage (The Race)The Event Loop now enters a continuous cycle, rotating through its standard phases to check if any background operations have finished.Because file reads and network calls take different amounts of time, their callbacks enter the Event Loop in a race condition based on speed.Here is how the Event Loop processes them as they finish:text ┌────────────────────────────────────────────────────────┐
+To understand how the Event Loop handles a large file with 200 lines of code, synchronous functions, 3 to 4 API network calls, and 3 to 4 file reads, 
+you have to look at it in two distinct stages: Initialization and Asynchronous Execution.
+Phase 1: The Initialization Stage (The Call Stack)When you run node app.js, Node.js does not start the Event Loop immediately. 
+It first processes the entire file from line 1 to 200 on the Call Stack (Synchronous Thread).
+Synchronous Functions: Any standard functions, loops, or math calculations run immediately. 
+They block the thread until they are completely finished.3–4 File Reads (fs.readFile): Node.js passes these tasks to the libuv Thread Pool (background threads). 
+The Main Thread does not wait; it instantly moves to the next line.3–4 API Calls (fetch / axios): 
+Node.js passes these to the Operating System network stack in the background. Again, the Main Thread moves on instantly.
+At line 200, the Call Stack is empty. Only now does the Event Loop spin up and take control.
+Phase 2: The Event Loop Stage (The Race)The Event Loop now enters a continuous cycle, rotating through its standard phases to check 
+if any background operations have finished.Because file reads and network calls take different amounts of time, 
+their callbacks enter the Event Loop in a race condition based on speed.Here is how the Event Loop processes them as they finish:text 
+ ┌────────────────────────────────────────────────────────┐
  │ 1. TIMERS PHASE                                        │
  │    - Checks for expired setTimeout/setInterval         │
  └───────────────────────────┬────────────────────────────┘
@@ -257,5 +282,14 @@ To understand how the Event Loop handles a large file with 200 lines of code, sy
  │ 3. CHECK PHASE                                         │
  │    - Checks for any registered setImmediate()          │
  └────────────────────────────────────────────────────────┘
-Use code with caution.1. Handling the API Calls (Network I/O)What happens: Your operating system handles the HTTP requests.Event Loop Phase: When a website responds, the OS flags it. The Event Loop picks up the callback during the Poll Phase and executes the code inside your .then() or async/await block.2. Handling the File Reads (Disk I/O)What happens: Node's background thread pool reads the files from your hard drive.Event Loop Phase: As soon as a file is read into memory, its callback is placed into the I/O queue. The Event Loop processes it during the Poll Phase.Crucial Rule: The Order is "First Come, First Served"If File Read #2 is a tiny 1KB file, and File Read #1 is a massive 500MB file, File Read #2 will execute its callback first.The Event Loop does not care about the order you wrote them in your 200 lines of code. It only cares about which background task finishes first.What happens if multiple tasks finish at the exact same millisecond?If an API call and a File Read finish at the exact same time, they both land in the Poll Phase queue. The Event Loop will simply process them one after the other in the order they arrived in that queue, without blocking the application.Would you like to see how a process.nextTick or a Promise microtask behaves if you insert it inside one of these API call callbacks?
+Use code with caution.1. Handling the API Calls (Network I/O)What happens: Your operating system handles the HTTP requests.
+Event Loop Phase: When a website responds, the OS flags it. The Event Loop picks up the callback during the Poll Phase and executes the code inside your 
+.then() or async/await block.2. Handling the File Reads (Disk I/O)What happens: Node's background thread pool reads the files from your hard drive.
+Event Loop Phase: As soon as a file is read into memory, its callback is placed into the I/O queue. The Event Loop processes it during the Poll Phase.
+Crucial Rule: The Order is "First Come, First Served"If File Read #2 is a tiny 1KB file, and File Read #1 is a massive 500MB file, 
+File Read #2 will execute its callback first.The Event Loop does not care about the order you wrote them in your 200 lines of code. 
+It only cares about which background task finishes first.What happens if multiple tasks finish at the exact same millisecond?If an API call and 
+a File Read finish at the exact same time, they both land in the Poll Phase queue. 
+The Event Loop will simply process them one after the other in the order they arrived in that queue, without blocking the application.
+Would you like to see how a process.nextTick or a Promise microtask behaves if you insert it inside one of these API call callbacks?
 */
