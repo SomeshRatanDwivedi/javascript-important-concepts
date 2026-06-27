@@ -1,3 +1,30 @@
+const obj = { x: 10 };
+
+function update(o) {
+  o.x = 20;       // Line A
+  o = { x: 99 };  // Line B
+}
+
+update(obj);
+console.log(obj.x);
+
+/*
+
+JavaScript passes arguments by value, but for objects, the value is the reference.
+
+o.x = 20 modifies the object that both o and obj reference.
+o = { x: 99 } only changes the local copy of the reference. It does not change what obj points to.
+
+A common interview phrase is:
+
+Objects are passed by value of their reference.
+
+This means the reference itself is copied into the function parameter, so both variables initially point to the same object, 
+but reassigning the parameter doesn't affect the caller's variable.
+
+*/
+
+
 async function fetchData() {
   console.log('A');
   const result = await Promise.resolve('data');
