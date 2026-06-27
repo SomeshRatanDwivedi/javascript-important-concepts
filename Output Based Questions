@@ -174,7 +174,8 @@ Node prepares to enter the Event Loop, but first, it checks its microtasks. It *
 
 * It grabs `NextTick 1` $\rightarrow$ **Prints "NextTick 1"**.
 * While executing, `NextTick 1` schedules *another* tick: `NextTick 2`. Node pushes this directly to the back of the current `nextTick` queue.
-* Because Node promises to *completely drain* the `nextTick` queue before moving on, it doesn't switch to Promises yet. It grabs the newly added `NextTick 2` $\rightarrow$ **Prints "NextTick 2"**.
+* Because Node promises to *completely drain* the `nextTick` queue before moving on, it doesn't switch to Promises yet. 
+It grabs the newly added `NextTick 2` $\rightarrow$ **Prints "NextTick 2"**.
 
 #### Phase 3: Draining the Promise Queue
 
